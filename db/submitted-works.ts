@@ -26,6 +26,7 @@ function toWork(row: typeof submissions.$inferSelect): Work {
     updatedAt: row.updatedAt.slice(0, 10),
     score: 0,
     url: row.url,
+    isWechatMiniProgram: row.url.startsWith("#小程序://"),
     screenshot: row.coverImage || undefined,
     screenshotAlt: row.coverImage ? `${row.title}作品封面` : undefined,
     stats: ["新提交", tags.length ? `${tags.length}个标签` : "待完善", "D1存储"],

@@ -18,6 +18,7 @@ type GeneratedWork = {
 };
 
 type InspectPreview = {
+  kind?: "webpage" | "wechat-mini-program";
   finalUrl: string;
   redirected?: boolean;
   raw?: {
@@ -101,7 +102,9 @@ export default function SubmitPage() {
       }
 
       setStatus("cover");
-      setNotice("已读取网页标题、描述和图片，正在套入作品舱封面模板。");
+      setNotice(result.kind === "wechat-mini-program"
+        ? "已识别微信小程序分享文本，已自动填入名称和默认简介。"
+        : "已读取网页标题、描述和图片，正在套入作品舱封面模板。");
 
       setPreview({
         finalUrl: result.finalUrl,
@@ -232,7 +235,7 @@ export default function SubmitPage() {
         <div className="submit-copy">
           <span className="eyebrow">提交作品</span>
           <h1>提交你的作品</h1>
-          <p>船员只需要提供体验链接、课程群和身份信息；系统会读取网页内容，生成作品名称、简介、类型和展示封面，确认后再提交。</p>
+          <p>网页作品会自动读取标题和主视觉；微信小程序只需粘贴分享文本，系统会自动识别名称，确认后即可先提交，资料可后续完善。</p>
           <div className="submit-steps">
             <div><span>01</span><strong>微信身份确认</strong><small>识别同一位船员</small></div>
             <div><span>02</span><strong>读取作品信息</strong><small>从链接提取标题、介绍和主视觉</small></div>
@@ -255,7 +258,7 @@ export default function SubmitPage() {
               onChange={(event) => setUrl(event.target.value)}
               inputMode="url"
             />
-            <small>支持 http/https 网页链接；微信内部链接或需要登录的网站可能需要手动补充。</small>
+            <small>支持 http/https 网页链接，也支持微信小程序分享文本，例如：#小程序://轻松秒记账/0gKUWDjSJoGl97A</small>
           </label>
           <label>
             所属课程群

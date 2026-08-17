@@ -2948,6 +2948,26 @@ body {
   font-weight: 800;
 }
 
+.copy-link-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(11, 85, 77, 0.32);
+  border-radius: 8px;
+  color: var(--brand);
+  background: #fff;
+  font-weight: 800;
+}
+
+.copy-link-button:hover {
+  border-color: var(--brand);
+  background: var(--mint);
+}
+
+.detail-actions .copy-link-button {
+  min-height: 46px;
+  padding: 0 22px;
+}
+
 .danger-button {
   border: 1px solid #b63d35;
   color: #fff;
@@ -3173,7 +3193,8 @@ body {
   }
 
   .danger-button,
-  .cancel-button {
+  .cancel-button,
+  .detail-actions .copy-link-button {
     width: 100%;
   }
 }

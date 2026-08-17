@@ -22,12 +22,22 @@ type DeletePayload = {
 };
 
 const COVER_ID = /^[a-f0-9]{64}\.(?:webp|jpg|png)$/;
+const MINI_PROGRAM_SHARE = /^#小程序:\/\/([^/]+)\/([A-Za-z0-9_-]+)$/;
 
 function required(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
 function canonicalSource(urlValue: string) {
+  const miniProgram = urlValue.trim().match(MINI_PROGRAM_SHARE);
+  if (miniProgram) {
+    const name = miniProgram[1].trim();
+    const code = miniProgram[2];
+    return {
+      sourceKey: `wechat-mini-program:${name}/${code}`.toLowerCase(),
+      url: urlValue.trim(),
+    };
+  }
   const url = new URL(urlValue);
   if (url.protocol !== "http:" && url.protocol !== "https:") {
     throw new Error("作品链接必须使用 http 或 https。");

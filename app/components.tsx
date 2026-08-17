@@ -99,10 +99,34 @@ export function WorkCard({ work }: { work: Work }) {
           <span>更新于 {work.updatedAt}</span>
         </div>
         <div className="card-bottom">
-          <Link href={work.url} target="_blank" rel="noreferrer">进入体验 ↗</Link>
+          {work.isWechatMiniProgram ? (
+            <CopyMiniProgramLink value={work.url} />
+          ) : (
+            <Link href={work.url} target="_blank" rel="noreferrer">进入体验 ↗</Link>
+          )}
         </div>
       </div>
     </article>
+  );
+}
+
+export function CopyMiniProgramLink({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <button className="copy-link-button" type="button" onClick={copyLink}>
+      {copied ? "已复制小程序链接" : "复制小程序链接"}
+    </button>
   );
 }
 

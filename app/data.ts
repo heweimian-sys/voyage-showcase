@@ -10,6 +10,7 @@ export type Work = {
   updatedAt: string;
   score: number;
   url: string;
+  isWechatMiniProgram?: boolean;
   screenshot?: string;
   screenshotAlt?: string;
   stats: [string, string, string];

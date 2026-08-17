@@ -4,6 +4,12 @@ type InspectPayload = {
   url?: string;
 };
 
+type MiniProgramShare = {
+  name: string;
+  code: string;
+  raw: string;
+};
+
 type MetaMap = Record<string, string>;
 
 const MAX_BYTES = 1_000_000;
@@ -41,6 +47,41 @@ function normalizeUrl(input: string, base?: string) {
   url.hash = "";
   validateSafeUrl(url);
   return url;
+}
+
+function parseMiniProgramShare(input: string): MiniProgramShare | null {
+  const normalized = input.trim().replace(/[\r\n]+/g, "");
+  const match = normalized.match(/^#小程序:\/\/([^/]+)\/([A-Za-z0-9_-]+)$/);
+  if (!match) return null;
+  return { name: match[1].trim(), code: match[2], raw: normalized };
+}
+
+function buildMiniProgramInspection(share: MiniProgramShare) {
+  const intro = `${share.name}微信小程序，提交后可在微信中打开体验。`;
+  return {
+    kind: "wechat-mini-program" as const,
+    finalUrl: share.raw,
+    redirected: false,
+    raw: {
+      title: share.name,
+      h1: share.name,
+      metaDescription: "",
+      ogTitle: "",
+      ogDescription: "",
+      ogImage: "",
+      favicon: "",
+      mainText: `微信小程序：${share.name}`,
+    },
+    generated: {
+      title: share.name.slice(0, 48),
+      intro,
+      type: "小程序" as const,
+      tags: ["小程序"],
+      coverMode: "manual-required" as const,
+      coverImage: "",
+      imageCandidates: [],
+    },
+  };
 }
 
 function validateSafeUrl(url: URL) {
@@ -279,6 +320,10 @@ export async function POST(request: Request) {
     const payload = (await request.json()) as InspectPayload;
     const rawUrl = String(payload.url || "").trim();
     if (!rawUrl) return json({ ok: false, error: "请先填写作品体验链接。" }, { status: 400 });
+    const miniProgramShare = parseMiniProgramShare(rawUrl);
+    if (miniProgramShare) {
+      return json({ ok: true, ...buildMiniProgramInspection(miniProgramShare) });
+    }
     if (/^(wx|weixin|pages\/|\/pages)/i.test(rawUrl)) {
       return json(
         {
