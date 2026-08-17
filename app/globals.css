@@ -2971,6 +2971,11 @@ body {
 .mini-program-code { display: grid; gap: 8px; justify-items: start; margin: 18px 0; }
 .mini-program-code img { width: 144px; height: 144px; object-fit: contain; border: 1px solid var(--line, #ddd); background: #fff; padding: 6px; border-radius: 8px; }
 .mini-program-code small { color: var(--muted, #6b7280); }
+.submission-kind-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.submission-kind-switch label { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line, #ddd); border-radius: 8px; padding: 10px 12px; cursor: pointer; background: #fff; }
+.submission-kind-switch label.active { border-color: #1f6f5b; background: #eef8f3; }
+.submission-kind-switch input { accent-color: #1f6f5b; }
+@media (max-width: 520px) { .submission-kind-switch { grid-template-columns: 1fr; } }
 
 .danger-button {
   border: 1px solid #b63d35;

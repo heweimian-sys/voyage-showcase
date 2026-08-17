@@ -6,6 +6,7 @@ import { SiteHeader } from "../components";
 import type { WorkType } from "../data";
 
 type InspectStatus = "idle" | "reading" | "cover" | "success" | "error";
+type SubmissionKind = "website" | "mini-program";
 
 type GeneratedWork = {
   title: string;
@@ -70,6 +71,7 @@ export default function SubmitPage() {
   const [wechat, setWechat] = useState("");
   const [group, setGroup] = useState("");
   const [url, setUrl] = useState("");
+  const [submissionKind, setSubmissionKind] = useState<SubmissionKind>("website");
   const [preview, setPreview] = useState<InspectPreview | null>(null);
   const [status, setStatus] = useState<InspectStatus>("idle");
   const [notice, setNotice] = useState("先粘贴链接即可识别；航海群和微信昵称可以在提交前补充，也可以稍后完善。");
@@ -84,6 +86,12 @@ export default function SubmitPage() {
     if (!cleanUrl) {
       setStatus("error");
       setNotice("请先粘贴作品体验链接或微信小程序分享文本。");
+      setPreview(fallbackPreview(cleanUrl));
+      return;
+    }
+    if (submissionKind === "website" && !/^https?:\/\//i.test(cleanUrl)) {
+      setStatus("error");
+      setNotice("网站 / 热词游戏站请填写 http:// 或 https:// 开头的网址。");
       setPreview(fallbackPreview(cleanUrl));
       return;
     }
@@ -112,7 +120,7 @@ export default function SubmitPage() {
         finalUrl: result.finalUrl,
         redirected: result.redirected,
         raw: result.raw,
-        generated: result.generated,
+        generated: { ...result.generated, type: submissionKind === "mini-program" ? "小程序" : "热词游戏站" },
       });
       setManualFile(null);
       window.setTimeout(() => {
@@ -268,15 +276,28 @@ export default function SubmitPage() {
           </div>
 
           <label>
+            提交类型
+            <div className="submission-kind-switch" role="radiogroup" aria-label="提交类型">
+              <label className={submissionKind === "website" ? "active" : ""}>
+                <input type="radio" name="submission-kind" checked={submissionKind === "website"} onChange={() => setSubmissionKind("website")} />
+                <span>网站 / 热词游戏站</span>
+              </label>
+              <label className={submissionKind === "mini-program" ? "active" : ""}>
+                <input type="radio" name="submission-kind" checked={submissionKind === "mini-program"} onChange={() => setSubmissionKind("mini-program")} />
+                <span>微信小程序</span>
+              </label>
+            </div>
+          </label>
+          <label>
             作品体验链接
             <input
               name="url"
-              placeholder="例如：https://example.com/work"
+              placeholder={submissionKind === "website" ? "例如：https://example.com/work" : "例如：#小程序://轻松秒记账/0gKUWDjSJoGl97A"}
               value={url}
               onChange={(event) => setUrl(event.target.value)}
               inputMode="url"
             />
-            <small>支持 http/https 网页链接，也支持微信小程序分享文本，例如：#小程序://轻松秒记账/0gKUWDjSJoGl97A</small>
+            <small>{submissionKind === "website" ? "填写可在浏览器打开的 http/https 地址。" : "填写微信分享文本，例如：#小程序://轻松秒记账/0gKUWDjSJoGl97A；也可以上传小程序码。"}</small>
           </label>
           <label>
             所属航海群
