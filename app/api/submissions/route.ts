@@ -19,6 +19,7 @@ type SubmissionPayload = {
 type DeletePayload = {
   id?: string;
   wechat?: string;
+  manageToken?: string;
 };
 
 const COVER_ID = /^[a-f0-9]{64}\.(?:webp|jpg|png)$/;
@@ -93,14 +94,14 @@ export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as SubmissionPayload;
     const urlValue = required(payload.url);
-    const wechat = required(payload.wechat);
-    const group = required(payload.group);
+    const wechat = required(payload.wechat) || "未填写身份";
+    const group = required(payload.group) || "待补充航海群";
     const title = required(payload.title);
     const intro = required(payload.intro);
     const type = payload.type === "热词游戏站" ? "热词游戏站" : "小程序";
 
-    if (!urlValue || !wechat || !group || !title || !intro) {
-      return Response.json({ ok: false, error: "作品链接、身份、航海群、标题和简介不能为空。" }, { status: 400 });
+    if (!urlValue || !title || !intro) {
+      return Response.json({ ok: false, error: "作品链接、标题和简介不能为空。" }, { status: 400 });
     }
     const { sourceKey, url } = canonicalSource(urlValue);
 
@@ -121,6 +122,7 @@ export async function POST(request: Request) {
       );
     }
     const id = existing?.id ?? crypto.randomUUID();
+    const manageToken = existing ? undefined : crypto.randomUUID().replaceAll("-", "");
     const values = {
       id,
       sourceKey,
@@ -134,6 +136,7 @@ export async function POST(request: Request) {
       coverImage: persistentImage(payload.coverImage),
       raw: JSON.stringify(payload.raw ?? {}),
       updatedAt: now,
+      ...(manageToken ? { manageToken } : {}),
     };
 
     await db
@@ -141,7 +144,7 @@ export async function POST(request: Request) {
       .values({ ...values, createdAt: now })
       .onConflictDoUpdate({ target: submissions.sourceKey, set: values });
 
-    return Response.json({ ok: true, id, updated: Boolean(existing) }, { status: existing ? 200 : 201 });
+    return Response.json({ ok: true, id, manageToken, updated: Boolean(existing) }, { status: existing ? 200 : 201 });
   } catch (error) {
     return Response.json(
       { ok: false, error: error instanceof Error ? error.message : "保存作品失败。" },
@@ -155,21 +158,22 @@ export async function DELETE(request: Request) {
     const payload = (await request.json()) as DeletePayload;
     const id = required(payload.id);
     const wechat = required(payload.wechat);
-    if (!id || !wechat) {
-      return Response.json({ ok: false, error: "作品和身份信息不能为空。" }, { status: 400 });
+    const manageToken = required(payload.manageToken);
+    if (!id || (!wechat && !manageToken)) {
+      return Response.json({ ok: false, error: "作品管理凭证不能为空。" }, { status: 400 });
     }
 
     const db = await getDb();
     const [existing] = await db
-      .select({ id: submissions.id, wechat: submissions.wechat, coverImage: submissions.coverImage })
+      .select({ id: submissions.id, wechat: submissions.wechat, manageToken: submissions.manageToken, coverImage: submissions.coverImage })
       .from(submissions)
       .where(eq(submissions.id, id))
       .limit(1);
-    if (!existing || existing.wechat !== wechat) {
-      return Response.json({ ok: false, error: "身份信息不匹配，无法删除该作品。" }, { status: 403 });
+    if (!existing || (manageToken ? existing.manageToken !== manageToken : existing.wechat !== wechat)) {
+      return Response.json({ ok: false, error: "管理凭证不匹配，无法删除该作品。" }, { status: 403 });
     }
 
-    await db.delete(submissions).where(and(eq(submissions.id, id), eq(submissions.wechat, wechat)));
+    await db.delete(submissions).where(eq(submissions.id, id));
 
     const coverId = coverIdFromUrl(existing.coverImage);
     if (coverId) {

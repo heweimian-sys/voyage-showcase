@@ -71,7 +71,7 @@ export default function SubmitPage() {
   const [url, setUrl] = useState("");
   const [preview, setPreview] = useState<InspectPreview | null>(null);
   const [status, setStatus] = useState<InspectStatus>("idle");
-  const [notice, setNotice] = useState("首次提交只需要体验链接、航海群和身份信息；作品名称、简介、类型和封面由系统读取后生成。");
+  const [notice, setNotice] = useState("先粘贴链接即可识别；航海群和微信昵称可以在提交前补充，也可以稍后完善。");
   const [manualFile, setManualFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -79,9 +79,9 @@ export default function SubmitPage() {
 
   async function readWorkInfo() {
     const cleanUrl = url.trim();
-    if (!wechat.trim() || !group.trim() || !cleanUrl) {
+    if (!cleanUrl) {
       setStatus("error");
-      setNotice("请先填写作品体验链接、所属航海群和微信身份信息。");
+      setNotice("请先粘贴作品体验链接或微信小程序分享文本。");
       setPreview(fallbackPreview(cleanUrl));
       return;
     }
@@ -173,9 +173,9 @@ export default function SubmitPage() {
       setNotice("请先点击“读取作品信息”，预览确认后再提交。");
       return;
     }
-    if (!wechat.trim() || !group.trim() || !preview.finalUrl.trim()) {
+    if (!preview.finalUrl.trim()) {
       setStatus("error");
-      setNotice("微信身份信息、航海群和作品链接不能为空。");
+      setNotice("作品链接不能为空。");
       return;
     }
     if (!preview.generated.title.trim() || !preview.generated.intro.trim()) {
@@ -217,10 +217,11 @@ export default function SubmitPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(submission),
       });
-      const result = (await response.json()) as { ok: boolean; error?: string; updated?: boolean };
+      const result = (await response.json()) as { ok: boolean; error?: string; updated?: boolean; id?: string; manageToken?: string };
       if (!response.ok || !result.ok) throw new Error(result.error || "保存作品失败。");
       setStatus("success");
       setSaved(true);
+      if (result.id && result.manageToken) localStorage.setItem(`voyage:manage:${result.id}`, result.manageToken);
       setNotice(result.updated ? "更新成功：同一作品已按链接更新为最新版本。" : "提交成功：作品已保存到作品舱数据库。");
     } catch (error) {
       setStatus("error");

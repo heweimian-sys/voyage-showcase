@@ -23,4 +23,5 @@ export const submissions = sqliteTable("submissions", {
   raw: text("raw").notNull().default("{}"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  manageToken: text("manage_token").notNull().default(""),
 });
