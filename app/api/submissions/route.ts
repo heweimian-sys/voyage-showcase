@@ -1,6 +1,6 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, like, sql } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { submissions } from "../../../db/schema";
+import { covers, submissions } from "../../../db/schema";
 
 export const runtime = "edge";
 
@@ -15,6 +15,13 @@ type SubmissionPayload = {
   coverImage?: string;
   raw?: unknown;
 };
+
+type DeletePayload = {
+  id?: string;
+  wechat?: string;
+};
+
+const COVER_ID = /^[a-f0-9]{64}\.(?:webp|jpg|png)$/;
 
 function required(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -48,7 +55,18 @@ export async function GET() {
   try {
     const db = await getDb();
     const rows = await db
-      .select()
+      .select({
+        id: submissions.id,
+        url: submissions.url,
+        group: submissions.group,
+        title: submissions.title,
+        intro: submissions.intro,
+        type: submissions.type,
+        tags: submissions.tags,
+        coverImage: submissions.coverImage,
+        createdAt: submissions.createdAt,
+        updatedAt: submissions.updatedAt,
+      })
       .from(submissions)
       .orderBy(desc(submissions.updatedAt), desc(submissions.createdAt))
       .limit(100);
@@ -81,7 +99,17 @@ export async function POST(request: Request) {
       : [];
     const now = new Date().toISOString();
     const db = await getDb();
-    const [existing] = await db.select({ id: submissions.id }).from(submissions).where(eq(submissions.sourceKey, sourceKey)).limit(1);
+    const [existing] = await db
+      .select({ id: submissions.id, wechat: submissions.wechat })
+      .from(submissions)
+      .where(eq(submissions.sourceKey, sourceKey))
+      .limit(1);
+    if (existing && existing.wechat !== wechat) {
+      return Response.json(
+        { ok: false, error: "该作品链接已由其他身份提交，请使用原身份信息更新。" },
+        { status: 403 },
+      );
+    }
     const id = existing?.id ?? crypto.randomUUID();
     const values = {
       id,
@@ -109,5 +137,57 @@ export async function POST(request: Request) {
       { ok: false, error: error instanceof Error ? error.message : "保存作品失败。" },
       { status: 500 },
     );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const payload = (await request.json()) as DeletePayload;
+    const id = required(payload.id);
+    const wechat = required(payload.wechat);
+    if (!id || !wechat) {
+      return Response.json({ ok: false, error: "作品和身份信息不能为空。" }, { status: 400 });
+    }
+
+    const db = await getDb();
+    const [existing] = await db
+      .select({ id: submissions.id, wechat: submissions.wechat, coverImage: submissions.coverImage })
+      .from(submissions)
+      .where(eq(submissions.id, id))
+      .limit(1);
+    if (!existing || existing.wechat !== wechat) {
+      return Response.json({ ok: false, error: "身份信息不匹配，无法删除该作品。" }, { status: 403 });
+    }
+
+    await db.delete(submissions).where(and(eq(submissions.id, id), eq(submissions.wechat, wechat)));
+
+    const coverId = coverIdFromUrl(existing.coverImage);
+    if (coverId) {
+      const [usage] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(submissions)
+        .where(like(submissions.coverImage, `%/api/covers/${coverId}`));
+      if (Number(usage?.count || 0) === 0) {
+        await db.delete(covers).where(eq(covers.id, coverId));
+      }
+    }
+
+    return Response.json({ ok: true });
+  } catch (error) {
+    return Response.json(
+      { ok: false, error: error instanceof Error ? error.message : "删除作品失败。" },
+      { status: 500 },
+    );
+  }
+}
+
+function coverIdFromUrl(value: string) {
+  if (!value) return "";
+  try {
+    const segments = new URL(value).pathname.split("/");
+    const id = segments.at(-1)?.toLowerCase() || "";
+    return COVER_ID.test(id) ? id : "";
+  } catch {
+    return "";
   }
 }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { RankingPanel, SiteHeader, WorkCover } from "../../components";
 import { works } from "../../data";
 import { getSubmittedWork } from "../../../db/submitted-works";
+import { DeleteWorkButton } from "./delete-work-button";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function WorkDetailPage({ params }: { params: { id: string 
           <div className="detail-actions">
             <a className="primary-btn" href={work.url} target="_blank" rel="noreferrer">进入体验 ↗</a>
             <Link className="text-btn" href="/submit">我也要提交作品 →</Link>
+            {!staticWork && <DeleteWorkButton id={String(work.id)} title={work.title} />}
           </div>
         </div>
 

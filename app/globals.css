@@ -2908,3 +2908,272 @@ body {
     font-size: 34px;
   }
 }
+
+/* Production interaction and responsive hardening */
+.empty-state {
+  grid-column: 1 / -1;
+  min-height: 240px;
+  padding: 40px 24px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  border: 1px dashed rgba(11, 85, 77, 0.28);
+  border-radius: 10px;
+  color: var(--muted);
+  background: var(--bg-soft);
+  text-align: center;
+}
+
+.empty-state strong {
+  color: var(--title);
+  font-size: 20px;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.empty-state a {
+  margin-top: 8px;
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.danger-button,
+.cancel-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.danger-button {
+  border: 1px solid #b63d35;
+  color: #fff;
+  background: #b63d35;
+}
+
+.danger-button:hover {
+  background: #972f29;
+}
+
+.danger-button:disabled,
+.cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.cancel-button {
+  border: 1px solid var(--line);
+  color: var(--title);
+  background: #fff;
+}
+
+.delete-confirm {
+  flex: 1 0 100%;
+  margin-top: 6px;
+  padding: 18px;
+  border: 1px solid rgba(182, 61, 53, 0.28);
+  border-radius: 10px;
+  background: #fff8f7;
+}
+
+.delete-confirm strong,
+.delete-confirm label {
+  display: block;
+  color: var(--title);
+}
+
+.delete-confirm p {
+  margin: 8px 0 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.delete-confirm label {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.delete-confirm input {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 7px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: 0;
+  background: #fff;
+}
+
+.delete-confirm input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(11, 85, 77, 0.08);
+}
+
+.delete-confirm .delete-error {
+  margin-bottom: 10px;
+  color: #972f29;
+  font-weight: 700;
+}
+
+.delete-confirm > div {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 767px) {
+  .topbar {
+    height: auto;
+    min-height: 64px;
+    padding: 10px 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 10px;
+  }
+
+  .brand {
+    min-width: 0;
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .brand > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-toggle {
+    grid-column: 2;
+    grid-row: 1;
+    display: block;
+  }
+
+  .outline-btn {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topbar nav {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+  }
+
+  .hero,
+  .works-hero {
+    width: calc(100vw - 32px);
+    height: auto;
+    min-height: 0;
+    padding: 28px 0 24px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hero-copy,
+  .hero-stats,
+  .ship-scene,
+  .works-hero .hero-copy,
+  .works-hero .hero-stats,
+  .works-hero .ship-scene {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .hero h1,
+  .works-hero h1,
+  .page-hero h1,
+  .submit-copy h1,
+  .detail-main h1 {
+    font-size: 34px;
+    letter-spacing: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .hero-stats div {
+    min-height: 92px;
+    padding: 12px 10px;
+  }
+
+  .hero-stats strong {
+    margin: 6px 0 2px;
+    font-size: 25px;
+  }
+
+  .hero-stats span,
+  .hero-stats small {
+    font-size: 11px;
+  }
+
+  .works-hero .ship-scene {
+    display: none;
+  }
+
+  .works-hero .hero-stats {
+    margin-top: 20px;
+  }
+
+  .gallery-shell {
+    width: calc(100vw - 32px);
+    padding: 16px 0 36px;
+  }
+
+  .gallery-tools {
+    padding: 10px;
+  }
+
+  .works-content-shell {
+    padding: 12px;
+  }
+
+  .works-content-shell .gallery-layout,
+  .works-content-shell .work-grid.wide {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-hero,
+  .ranking-board,
+  .detail-shell,
+  .submit-page {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .submit-page {
+    padding-top: 32px;
+    padding-bottom: 44px;
+    gap: 30px;
+  }
+
+  .submit-modal {
+    padding: 18px;
+  }
+
+  .preview-actions,
+  .delete-confirm > div {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .delete-confirm {
+    width: 100%;
+  }
+
+  .danger-button,
+  .cancel-button {
+    width: 100%;
+  }
+}

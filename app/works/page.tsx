@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { HeroStats, RankingPanel, SiteHeader, SortSelect, WorkCard } from "../components";
 import { WorkType, works } from "../data";
 import { getSubmittedWorks } from "../../db/submitted-works";
@@ -100,7 +101,14 @@ export default async function WorksPage({ searchParams }: { searchParams?: { typ
 
           <div className="gallery-layout">
             <div className="work-grid wide">
-              {visibleWorks.slice(0, 3).map((work) => <WorkCard key={work.id} work={work} />)}
+              {visibleWorks.map((work) => <WorkCard key={work.id} work={work} />)}
+              {visibleWorks.length === 0 && (
+                <div className="empty-state">
+                  <strong>没有找到匹配的作品</strong>
+                  <p>换一个关键词或清除筛选条件后再试。</p>
+                  <Link href="/works">清除筛选</Link>
+                </div>
+              )}
             </div>
             <RankingPanel />
           </div>

@@ -27,7 +27,7 @@ export function SiteHeader() {
         <span className="wheel" aria-hidden="true">⚓</span>
         <span>生财航海作品舱</span>
       </Link>
-      <button className="menu-toggle" type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="打开导航菜单">
+      <button className="menu-toggle" type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? "关闭导航菜单" : "打开导航菜单"}>
         <span />
         <span />
       </button>
