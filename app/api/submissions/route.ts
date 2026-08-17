@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     const type = payload.type === "热词游戏站" ? "热词游戏站" : "小程序";
 
     if (!urlValue || !wechat || !group || !title || !intro) {
-      return Response.json({ ok: false, error: "作品链接、身份、课程群、标题和简介不能为空。" }, { status: 400 });
+      return Response.json({ ok: false, error: "作品链接、身份、航海群、标题和简介不能为空。" }, { status: 400 });
     }
     const { sourceKey, url } = canonicalSource(urlValue);
 

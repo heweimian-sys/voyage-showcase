@@ -111,21 +111,28 @@ export function WorkCard({ work }: { work: Work }) {
 }
 
 export function CopyMiniProgramLink({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState("");
 
   async function copyLink() {
     try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: "微信小程序分享链接", text: value });
+        setFeedback("已打开分享面板");
+        window.setTimeout(() => setFeedback(""), 1800);
+        return;
+      }
       await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopied(false);
+      setFeedback("已复制，请在微信中粘贴打开");
+      window.setTimeout(() => setFeedback(""), 2400);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setFeedback("请长按复制后到微信打开");
     }
   }
 
   return (
-    <button className="copy-link-button" type="button" onClick={copyLink}>
-      {copied ? "已复制小程序链接" : "复制小程序链接"}
+    <button className="copy-link-button" type="button" onClick={copyLink} aria-live="polite">
+      {feedback || "分享/复制小程序链接"}
     </button>
   );
 }

@@ -71,7 +71,7 @@ export default function SubmitPage() {
   const [url, setUrl] = useState("");
   const [preview, setPreview] = useState<InspectPreview | null>(null);
   const [status, setStatus] = useState<InspectStatus>("idle");
-  const [notice, setNotice] = useState("首次提交只需要体验链接、课程群和身份信息；作品名称、简介、类型和封面由系统读取后生成。");
+  const [notice, setNotice] = useState("首次提交只需要体验链接、航海群和身份信息；作品名称、简介、类型和封面由系统读取后生成。");
   const [manualFile, setManualFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -81,7 +81,7 @@ export default function SubmitPage() {
     const cleanUrl = url.trim();
     if (!wechat.trim() || !group.trim() || !cleanUrl) {
       setStatus("error");
-      setNotice("请先填写作品体验链接、所属课程群和微信身份信息。");
+      setNotice("请先填写作品体验链接、所属航海群和微信身份信息。");
       setPreview(fallbackPreview(cleanUrl));
       return;
     }
@@ -175,7 +175,7 @@ export default function SubmitPage() {
     }
     if (!wechat.trim() || !group.trim() || !preview.finalUrl.trim()) {
       setStatus("error");
-      setNotice("微信身份信息、课程群和作品链接不能为空。");
+      setNotice("微信身份信息、航海群和作品链接不能为空。");
       return;
     }
     if (!preview.generated.title.trim() || !preview.generated.intro.trim()) {
@@ -261,7 +261,7 @@ export default function SubmitPage() {
             <small>支持 http/https 网页链接，也支持微信小程序分享文本，例如：#小程序://轻松秒记账/0gKUWDjSJoGl97A</small>
           </label>
           <label>
-            所属课程群
+            所属航海群
             <input name="group" placeholder="例如：生财有术第 88 期" value={group} onChange={(event) => setGroup(event.target.value)} />
           </label>
           <label>

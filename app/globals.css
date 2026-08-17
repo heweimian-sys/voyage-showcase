@@ -3197,4 +3197,48 @@ body {
   .detail-actions .copy-link-button {
     width: 100%;
   }
+
+  .detail-main > .cover {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+
+  .detail-shell {
+    gap: 22px;
+    padding-top: 24px;
+    padding-bottom: 40px;
+  }
+
+  .detail-main h1 {
+    margin-bottom: 12px;
+    font-size: 32px;
+    line-height: 1.2;
+  }
+
+  .detail-intro {
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .detail-meta {
+    gap: 6px;
+  }
+
+  .detail-meta span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .detail-side {
+    padding: 16px;
+  }
+
+  .delete-confirm {
+    max-height: none;
+    padding: 14px;
+  }
+
+  .delete-confirm p {
+    font-size: 14px;
+  }
 }

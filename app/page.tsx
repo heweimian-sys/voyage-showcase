@@ -35,7 +35,7 @@ export default function Home() {
       <section className="home-tools" aria-label="作品筛选">
         <form className="search-box" action="/works">
           <span aria-hidden="true">⌕</span>
-          <input name="q" placeholder="搜索作品、作者、课程群" />
+          <input name="q" placeholder="搜索作品、作者、航海群" />
         </form>
         <div className="filter-row" aria-label="作品分类">
           <Link className="active" href="/works">全部</Link>

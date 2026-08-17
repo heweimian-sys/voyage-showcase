@@ -80,7 +80,7 @@ export default async function WorksPage({ searchParams }: { searchParams?: { typ
             {activeSort !== "latest" && <input type="hidden" name="sort" value={activeSort} />}
             <label className="search-box">
               <span aria-hidden="true">⌕</span>
-              <input name="q" defaultValue={q} placeholder="搜索作品、作者、课程群" aria-label="搜索作品、作者、课程群" />
+              <input name="q" defaultValue={q} placeholder="搜索作品、作者、航海群" aria-label="搜索作品、作者、航海群" />
             </label>
           </form>
           <div className="filter-row" role="group" aria-label="按作品类型筛选">
