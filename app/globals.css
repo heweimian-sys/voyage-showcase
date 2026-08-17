@@ -2971,11 +2971,13 @@ body {
 .mini-program-code { display: grid; gap: 8px; justify-items: start; margin: 18px 0; }
 .mini-program-code img { width: 144px; height: 144px; object-fit: contain; border: 1px solid var(--line, #ddd); background: #fff; padding: 6px; border-radius: 8px; }
 .mini-program-code small { color: var(--muted, #6b7280); }
-.submission-kind-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
-.submission-kind-switch label { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line, #ddd); border-radius: 8px; padding: 10px 12px; cursor: pointer; background: #fff; }
-.submission-kind-switch label.active { border-color: #1f6f5b; background: #eef8f3; }
+.submission-type-fieldset { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.submission-type-fieldset legend { display: block; padding: 0; margin-bottom: 8px; font-weight: 700; }
+.submission-kind-switch { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 8px; }
+.submission-kind-switch label { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line, #ddd); border-radius: 999px; padding: 9px 16px; cursor: pointer; background: #fff; width: auto; }
+.submission-kind-switch label.active { border-color: #1f6f5b; background: #eef8f3; color: #174f42; }
 .submission-kind-switch input { accent-color: #1f6f5b; }
-@media (max-width: 520px) { .submission-kind-switch { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .submission-kind-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } .submission-kind-switch label { justify-content: center; padding-inline: 8px; } }
 
 .danger-button {
   border: 1px solid #b63d35;

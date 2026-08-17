@@ -275,19 +275,19 @@ export default function SubmitPage() {
             {statusText[status]}
           </div>
 
-          <label>
-            提交类型
+          <fieldset className="submission-type-fieldset">
+            <legend>提交类型</legend>
             <div className="submission-kind-switch" role="radiogroup" aria-label="提交类型">
-              <label className={submissionKind === "website" ? "active" : ""}>
-                <input type="radio" name="submission-kind" checked={submissionKind === "website"} onChange={() => setSubmissionKind("website")} />
-                <span>网站 / 热词游戏站</span>
-              </label>
               <label className={submissionKind === "mini-program" ? "active" : ""}>
-                <input type="radio" name="submission-kind" checked={submissionKind === "mini-program"} onChange={() => setSubmissionKind("mini-program")} />
-                <span>微信小程序</span>
+                <input type="radio" name="submission-kind" checked={submissionKind === "mini-program"} onChange={() => { setSubmissionKind("mini-program"); setPreview(null); }} />
+                <span>小程序</span>
+              </label>
+              <label className={submissionKind === "website" ? "active" : ""}>
+                <input type="radio" name="submission-kind" checked={submissionKind === "website"} onChange={() => { setSubmissionKind("website"); setPreview(null); }} />
+                <span>热词游戏站</span>
               </label>
             </div>
-          </label>
+          </fieldset>
           <label>
             作品体验链接
             <input
@@ -368,11 +368,9 @@ export default function SubmitPage() {
                 <textarea value={preview.generated.intro} onChange={(event) => updateGenerated({ intro: event.target.value })} placeholder="20—40 字，基于真实作品内容" rows={3} />
               </label>
               <label>
-                作品类型
-                <select value={preview.generated.type} onChange={(event) => updateGenerated({ type: event.target.value as WorkType })}>
-                  <option>小程序</option>
-                  <option>热词游戏站</option>
-                </select>
+                作品分类
+                <input value={preview.generated.type} readOnly aria-readonly="true" />
+                <small>分类与上方提交类型保持一致。</small>
               </label>
               <label>
                 内容标签
