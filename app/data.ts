@@ -13,6 +13,7 @@ export type Work = {
   isWechatMiniProgram?: boolean;
   screenshot?: string;
   screenshotAlt?: string;
+  qrCode?: string;
   stats: [string, string, string];
   cover: "lighthouse" | "tiles" | "chart" | "journal" | "map";
   latest?: boolean;

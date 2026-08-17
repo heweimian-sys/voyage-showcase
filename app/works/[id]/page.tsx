@@ -19,6 +19,12 @@ export default async function WorkDetailPage({ params }: { params: { id: string 
         <div className="detail-main">
           <Link className="back-link" href="/works">← 返回作品广场</Link>
           <WorkCover work={work} />
+          {work.isWechatMiniProgram && work.qrCode && (
+            <div className="mini-program-code">
+              <img src={work.qrCode} alt={`${work.title}小程序码`} />
+              <small>微信扫一扫体验小程序</small>
+            </div>
+          )}
           <h1>{work.title}</h1>
           <p className="detail-intro">{work.intro}</p>
           <div className="detail-meta">

@@ -30,6 +30,7 @@ type InspectPreview = {
     ogImage?: string;
     favicon?: string;
     mainText?: string;
+    qrCode?: string;
   };
   generated: GeneratedWork;
 };
@@ -73,6 +74,7 @@ export default function SubmitPage() {
   const [status, setStatus] = useState<InspectStatus>("idle");
   const [notice, setNotice] = useState("先粘贴链接即可识别；航海群和微信昵称可以在提交前补充，也可以稍后完善。");
   const [manualFile, setManualFile] = useState<File | null>(null);
+  const [qrFile, setQrFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
 
   const tagInput = useMemo(() => preview?.generated.tags.join("，") || "", [preview]);
@@ -139,6 +141,13 @@ export default function SubmitPage() {
     const localUrl = URL.createObjectURL(file);
     setManualFile(file);
     updateGenerated({ coverImage: localUrl, coverMode: "image-template" });
+  }
+
+  function handleQrImage(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 12_000_000) { setStatus("error"); setNotice("请选择 12MB 以内的小程序码图片。"); return; }
+    setQrFile(file);
+    setNotice("已添加小程序码，提交后会在作品详情页展示。");
   }
 
   async function compressCover(file: File) {
@@ -210,6 +219,14 @@ export default function SubmitPage() {
         if (!uploadResponse.ok || !upload.ok || !upload.url) throw new Error(upload.error || "封面保存失败。");
         submission.coverImage = upload.url;
       }
+      if (qrFile) {
+        const form = new FormData();
+        form.append("file", new File([qrFile], "mini-program-code.png", { type: qrFile.type }));
+        const uploadResponse = await fetch("/api/covers", { method: "POST", body: form });
+        const upload = (await uploadResponse.json()) as { ok: boolean; error?: string; url?: string };
+        if (!uploadResponse.ok || !upload.ok || !upload.url) throw new Error(upload.error || "小程序码保存失败。");
+        submission.raw = { ...(submission.raw || {}), qrCode: upload.url };
+      }
 
       setNotice("正在保存到作品舱数据库。");
       const response = await fetch("/api/submissions", {
@@ -268,6 +285,11 @@ export default function SubmitPage() {
           <label>
             微信昵称 / 身份信息
             <input name="wechat" placeholder="用于识别同一位船员" value={wechat} onChange={(event) => setWechat(event.target.value)} />
+          </label>
+          <label className="manual-upload">
+            小程序码（推荐上传）
+            <input type="file" accept="image/*" onChange={(event) => handleQrImage(event.target.files?.[0])} />
+            <small>用户可以在微信中扫码体验；网站会把它展示在详情页。</small>
           </label>
 
           <button className="secondary-action" type="button" onClick={readWorkInfo} disabled={status === "reading" || status === "cover"}>

@@ -2968,6 +2968,10 @@ body {
   padding: 0 22px;
 }
 
+.mini-program-code { display: grid; gap: 8px; justify-items: start; margin: 18px 0; }
+.mini-program-code img { width: 144px; height: 144px; object-fit: contain; border: 1px solid var(--line, #ddd); background: #fff; padding: 6px; border-radius: 8px; }
+.mini-program-code small { color: var(--muted, #6b7280); }
+
 .danger-button {
   border: 1px solid #b63d35;
   color: #fff;
