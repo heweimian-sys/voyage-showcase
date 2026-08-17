@@ -71,7 +71,7 @@ export default function SubmitPage() {
   const [preview, setPreview] = useState<InspectPreview | null>(null);
   const [status, setStatus] = useState<InspectStatus>("idle");
   const [notice, setNotice] = useState("首次提交只需要体验链接、课程群和身份信息；作品名称、简介、类型和封面由系统读取后生成。");
-  const [manualImage, setManualImage] = useState("");
+  const [manualFile, setManualFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
 
   const tagInput = useMemo(() => preview?.generated.tags.join("，") || "", [preview]);
@@ -109,7 +109,7 @@ export default function SubmitPage() {
         raw: result.raw,
         generated: result.generated,
       });
-      setManualImage("");
+      setManualFile(null);
       window.setTimeout(() => {
         setStatus("success");
         setNotice(result.redirected ? "读取成功：链接存在跳转，已使用最终跳转地址生成预览。" : statusText.success);
@@ -118,7 +118,7 @@ export default function SubmitPage() {
       setStatus("error");
       setNotice(error instanceof Error ? error.message : statusText.error);
       setPreview(fallbackPreview(cleanUrl));
-      setManualImage("");
+      setManualFile(null);
     }
   }
 
@@ -128,9 +128,32 @@ export default function SubmitPage() {
 
   function handleManualImage(file?: File) {
     if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 12_000_000) {
+      setStatus("error");
+      setNotice("请选择 12MB 以内的图片文件。");
+      return;
+    }
     const localUrl = URL.createObjectURL(file);
-    setManualImage(localUrl);
+    setManualFile(file);
     updateGenerated({ coverImage: localUrl, coverMode: "image-template" });
+  }
+
+  async function compressCover(file: File) {
+    const image = await createImageBitmap(file);
+    const scale = Math.min(1, 1200 / image.width, 1200 / image.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("当前浏览器无法处理封面图片。");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    image.close();
+
+    for (const quality of [0.82, 0.7, 0.58, 0.46]) {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+      if (blob && blob.size <= 400_000) return blob;
+    }
+    throw new Error("图片压缩后仍超过 400KB，请选择更简单或更小的图片。");
   }
 
   function regenerateCover() {
@@ -166,7 +189,7 @@ export default function SubmitPage() {
       intro: preview.generated.intro.trim(),
       type: preview.generated.type,
       tags: preview.generated.tags,
-      coverImage: manualImage ? "" : preview.generated.coverImage,
+      coverImage: preview.generated.coverImage,
       raw: preview.raw,
     };
 
@@ -174,6 +197,18 @@ export default function SubmitPage() {
     setStatus("reading");
     setNotice("正在保存到作品舱数据库。");
     try {
+      if (manualFile) {
+        setNotice("正在压缩并保存封面图片。");
+        const compressed = await compressCover(manualFile);
+        const form = new FormData();
+        form.append("file", new File([compressed], "cover.webp", { type: "image/webp" }));
+        const uploadResponse = await fetch("/api/covers", { method: "POST", body: form });
+        const upload = (await uploadResponse.json()) as { ok: boolean; error?: string; url?: string };
+        if (!uploadResponse.ok || !upload.ok || !upload.url) throw new Error(upload.error || "封面保存失败。");
+        submission.coverImage = upload.url;
+      }
+
+      setNotice("正在保存到作品舱数据库。");
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "content-type": "application/json" },

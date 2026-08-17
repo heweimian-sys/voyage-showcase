@@ -1,5 +1,13 @@
 import { sql } from "drizzle-orm";
-import { text, sqliteTable } from "drizzle-orm/sqlite-core";
+import { blob, integer, text, sqliteTable } from "drizzle-orm/sqlite-core";
+
+export const covers = sqliteTable("covers", {
+  id: text("id").primaryKey(),
+  data: blob("data", { mode: "buffer" }).notNull(),
+  contentType: text("content_type").notNull(),
+  size: integer("size").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
 
 export const submissions = sqliteTable("submissions", {
   id: text("id").primaryKey(),
