@@ -1,0 +1,318 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
+import { SiteHeader } from "../components";
+import type { WorkType } from "../data";
+
+type InspectStatus = "idle" | "reading" | "cover" | "success" | "error";
+
+type GeneratedWork = {
+  title: string;
+  intro: string;
+  type: WorkType;
+  tags: string[];
+  coverMode: "image-template" | "manual-required";
+  coverImage: string;
+  imageCandidates: string[];
+};
+
+type InspectPreview = {
+  finalUrl: string;
+  redirected?: boolean;
+  raw?: {
+    title?: string;
+    h1?: string;
+    metaDescription?: string;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: string;
+    favicon?: string;
+    mainText?: string;
+  };
+  generated: GeneratedWork;
+};
+
+const statusText: Record<InspectStatus, string> = {
+  idle: "填写链接后，点击读取作品信息。",
+  reading: "正在读取作品",
+  cover: "正在生成封面",
+  success: "读取成功，请预览确认后提交。",
+  error: "无法读取，请补充信息。",
+};
+
+function normalizeTags(value: string) {
+  return value
+    .split(/[,\s，、]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
+function stableSubmissionId(url: string) {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    parsed.searchParams.sort();
+    return `${parsed.hostname}${parsed.pathname}${parsed.search}`.toLowerCase();
+  } catch {
+    return url.trim().toLowerCase();
+  }
+}
+
+function fallbackPreview(url: string): InspectPreview {
+  return {
+    finalUrl: url,
+    generated: {
+      title: "",
+      intro: "",
+      type: "小程序",
+      tags: ["小程序"],
+      coverMode: "manual-required",
+      coverImage: "",
+      imageCandidates: [],
+    },
+  };
+}
+
+export default function SubmitPage() {
+  const [wechat, setWechat] = useState("");
+  const [group, setGroup] = useState("");
+  const [url, setUrl] = useState("");
+  const [preview, setPreview] = useState<InspectPreview | null>(null);
+  const [status, setStatus] = useState<InspectStatus>("idle");
+  const [notice, setNotice] = useState("首次提交只需要体验链接、课程群和身份信息；作品名称、简介、类型和封面由系统读取后生成。");
+  const [manualImage, setManualImage] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const tagInput = useMemo(() => preview?.generated.tags.join("，") || "", [preview]);
+
+  async function readWorkInfo() {
+    const cleanUrl = url.trim();
+    if (!wechat.trim() || !group.trim() || !cleanUrl) {
+      setStatus("error");
+      setNotice("请先填写作品体验链接、所属课程群和微信身份信息。");
+      setPreview(fallbackPreview(cleanUrl));
+      return;
+    }
+
+    setSaved(false);
+    setStatus("reading");
+    setNotice("正在通过服务端读取网页内容，不在浏览器前端跨域抓取目标网站。");
+
+    try {
+      const response = await fetch("/api/inspect-url", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: cleanUrl }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.ok) {
+        throw new Error(result.error || "读取失败，请补充信息。");
+      }
+
+      setStatus("cover");
+      setNotice("已读取网页标题、描述和图片，正在套入作品舱封面模板。");
+
+      setPreview({
+        finalUrl: result.finalUrl,
+        redirected: result.redirected,
+        raw: result.raw,
+        generated: result.generated,
+      });
+      setManualImage("");
+      window.setTimeout(() => {
+        setStatus("success");
+        setNotice(result.redirected ? "读取成功：链接存在跳转，已使用最终跳转地址生成预览。" : statusText.success);
+      }, 280);
+    } catch (error) {
+      setStatus("error");
+      setNotice(error instanceof Error ? error.message : statusText.error);
+      setPreview(fallbackPreview(cleanUrl));
+      setManualImage("");
+    }
+  }
+
+  function updateGenerated(patch: Partial<GeneratedWork>) {
+    setPreview((current) => current ? { ...current, generated: { ...current.generated, ...patch } } : current);
+  }
+
+  function handleManualImage(file?: File) {
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    setManualImage(localUrl);
+    updateGenerated({ coverImage: localUrl, coverMode: "image-template" });
+  }
+
+  function regenerateCover() {
+    if (!preview) return;
+    setStatus("cover");
+    setNotice("已根据当前标题、类型和选中主视觉重新生成封面预览。");
+    window.setTimeout(() => setStatus("success"), 220);
+  }
+
+  function handleConfirm(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!preview) {
+      setStatus("error");
+      setNotice("请先点击“读取作品信息”，预览确认后再提交。");
+      return;
+    }
+    if (!wechat.trim() || !group.trim() || !preview.finalUrl.trim()) {
+      setStatus("error");
+      setNotice("微信身份信息、课程群和作品链接不能为空。");
+      return;
+    }
+    if (!preview.generated.title.trim() || !preview.generated.intro.trim()) {
+      setStatus("error");
+      setNotice("当前页面缺少标题或简介，请补充后再确认提交。");
+      return;
+    }
+
+    const submission = {
+      id: stableSubmissionId(preview.finalUrl),
+      url: preview.finalUrl,
+      wechat: wechat.trim(),
+      group: group.trim(),
+      title: preview.generated.title.trim(),
+      intro: preview.generated.intro.trim(),
+      type: preview.generated.type,
+      tags: preview.generated.tags,
+      coverImage: manualImage || preview.generated.coverImage,
+      raw: preview.raw,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const existing = JSON.parse(window.localStorage.getItem("voyage-submissions") || "[]") as Array<typeof submission>;
+    const next = [submission, ...existing.filter((item) => item.id !== submission.id)];
+    window.localStorage.setItem("voyage-submissions", JSON.stringify(next));
+    setStatus("success");
+    setSaved(true);
+    setNotice("确认成功：同一作品再次提交会按链接识别并更新为最新版本。当前项目未接数据库，已先保存到本机记录。");
+  }
+
+  return (
+    <main>
+      <SiteHeader />
+      <section className="submit-page submit-flow-page">
+        <div className="submit-copy">
+          <span className="eyebrow">提交作品</span>
+          <h1>提交你的作品</h1>
+          <p>船员只需要提供体验链接、课程群和身份信息；系统会读取网页内容，生成作品名称、简介、类型和展示封面，确认后再提交。</p>
+          <div className="submit-steps">
+            <div><span>01</span><strong>微信身份确认</strong><small>识别同一位船员</small></div>
+            <div><span>02</span><strong>读取作品信息</strong><small>从链接提取标题、介绍和主视觉</small></div>
+            <div><span>03</span><strong>保存最新体验链接</strong><small>多次提交按最新结果展示</small></div>
+          </div>
+        </div>
+
+        <form className={`submit-modal inline ${status}`} onSubmit={handleConfirm}>
+          <div className={`fetch-status ${status}`} role="status" aria-live="polite">
+            <span />
+            {statusText[status]}
+          </div>
+
+          <label>
+            作品体验链接
+            <input
+              name="url"
+              placeholder="例如：https://example.com/work"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              inputMode="url"
+            />
+            <small>支持 http/https 网页链接；微信内部链接或需要登录的网站可能需要手动补充。</small>
+          </label>
+          <label>
+            所属课程群
+            <input name="group" placeholder="例如：生财有术第 88 期" value={group} onChange={(event) => setGroup(event.target.value)} />
+          </label>
+          <label>
+            微信昵称 / 身份信息
+            <input name="wechat" placeholder="用于识别同一位船员" value={wechat} onChange={(event) => setWechat(event.target.value)} />
+          </label>
+
+          <button className="secondary-action" type="button" onClick={readWorkInfo} disabled={status === "reading" || status === "cover"}>
+            {status === "reading" || status === "cover" ? "读取中…" : "读取作品信息"}
+          </button>
+
+          {preview && (
+            <section className="preview-card" aria-label="作品提交预览">
+              <div className="preview-head">
+                <strong>提交前预览</strong>
+                {preview.redirected && <span>已使用最终跳转链接</span>}
+              </div>
+
+              <div
+                className={`cover-preview ${preview.generated.coverImage ? "has-image" : ""}`}
+                style={preview.generated.coverImage ? { backgroundImage: `url(${preview.generated.coverImage})` } : undefined}
+              >
+                <div className="cover-preview-content">
+                  <span>{preview.generated.type}</span>
+                  <strong>{preview.generated.title || "请补充作品名称"}</strong>
+                  <small>{preview.generated.intro || "请补充一句话介绍"}</small>
+                </div>
+              </div>
+
+              {preview.generated.imageCandidates.length > 0 ? (
+                <div className="image-picker">
+                  <span>选择主视觉</span>
+                  <div>
+                    {preview.generated.imageCandidates.map((image) => (
+                      <button
+                        className={preview.generated.coverImage === image ? "active" : ""}
+                        type="button"
+                        key={image}
+                        onClick={() => updateGenerated({ coverImage: image, coverMode: "image-template" })}
+                        aria-label="选择这张主视觉"
+                      >
+                        <img src={image} alt="" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <label className="manual-upload">
+                  目标页面没有可用图片，请手动上传封面
+                  <input type="file" accept="image/*" onChange={(event) => handleManualImage(event.target.files?.[0])} />
+                </label>
+              )}
+
+              <label>
+                作品名称
+                <input value={preview.generated.title} onChange={(event) => updateGenerated({ title: event.target.value })} placeholder="系统未识别时请补充" />
+              </label>
+              <label>
+                一句话介绍
+                <textarea value={preview.generated.intro} onChange={(event) => updateGenerated({ intro: event.target.value })} placeholder="20—40 字，基于真实作品内容" rows={3} />
+              </label>
+              <label>
+                作品类型
+                <select value={preview.generated.type} onChange={(event) => updateGenerated({ type: event.target.value as WorkType })}>
+                  <option>小程序</option>
+                  <option>热词游戏站</option>
+                </select>
+              </label>
+              <label>
+                内容标签
+                <input value={tagInput} onChange={(event) => updateGenerated({ tags: normalizeTags(event.target.value) })} placeholder="最多 4 个，用顿号或空格分隔" />
+              </label>
+              <div className="tag-row">
+                {preview.generated.tags.map((tag) => <span key={tag}>{tag}</span>)}
+              </div>
+
+              <div className="preview-actions">
+                <button type="button" className="secondary-action ghost" onClick={readWorkInfo}>重新读取</button>
+                <button type="button" className="secondary-action ghost" onClick={regenerateCover}>重新生成封面</button>
+              </div>
+            </section>
+          )}
+
+          <button type="submit" disabled={!preview}>确认提交</button>
+          <p>{notice}</p>
+          {saved && <Link className="success-link" href="/works">查看我的作品 →</Link>}
+        </form>
+      </section>
+    </main>
+  );
+}
