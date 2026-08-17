@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "voyage-showcase",
   "main": "dist/server/index.js",
+  "workers_dev": true,
   "compatibility_date": "2026-05-15",
   "compatibility_flags": ["nodejs_compat"],
   "no_bundle": true,
@@ -15,6 +16,12 @@
     "directory": "dist/client",
     "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "works.wow2333.us.ci",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
