@@ -1,5 +1,8 @@
 import { HeroStats, RankingPanel, SiteHeader, SortSelect, WorkCard } from "../components";
 import { WorkType, works } from "../data";
+import { getSubmittedWorks } from "../../db/submitted-works";
+
+export const dynamic = "force-dynamic";
 
 const filters = [
   { label: "全部", value: "all" },
@@ -27,13 +30,15 @@ function hrefFor(type: string, sort: string, q: string) {
   return `/works${query ? `?${query}` : ""}`;
 }
 
-export default function WorksPage({ searchParams }: { searchParams?: { type?: string; sort?: string; q?: string } }) {
+export default async function WorksPage({ searchParams }: { searchParams?: { type?: string; sort?: string; q?: string } }) {
   const q = String(searchParams?.q || "").trim();
   const activeType = searchParams?.type || "all";
   const activeSort = searchParams?.sort || "latest";
   const typeValue = typeFromParam(activeType);
   const keyword = q.toLowerCase();
-  const visibleWorks = works
+  const submittedWorks = await getSubmittedWorks();
+  const allWorks = [...submittedWorks, ...works];
+  const visibleWorks = allWorks
     .filter((work) => {
       const typeMatched = typeValue === "全部" || work.type === typeValue;
       const keywordMatched =

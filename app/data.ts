@@ -1,7 +1,7 @@
 export type WorkType = "小程序" | "热词游戏站";
 
 export type Work = {
-  id: number;
+  id: number | string;
   title: string;
   subtitle: string;
   maker: string;

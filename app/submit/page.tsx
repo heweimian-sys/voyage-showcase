@@ -49,17 +49,6 @@ function normalizeTags(value: string) {
     .slice(0, 4);
 }
 
-function stableSubmissionId(url: string) {
-  try {
-    const parsed = new URL(url);
-    parsed.hash = "";
-    parsed.searchParams.sort();
-    return `${parsed.hostname}${parsed.pathname}${parsed.search}`.toLowerCase();
-  } catch {
-    return url.trim().toLowerCase();
-  }
-}
-
 function fallbackPreview(url: string): InspectPreview {
   return {
     finalUrl: url,
@@ -106,7 +95,7 @@ export default function SubmitPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ url: cleanUrl }),
       });
-      const result = await response.json();
+      const result = (await response.json()) as InspectPreview & { ok: boolean; error?: string };
       if (!response.ok || !result.ok) {
         throw new Error(result.error || "读取失败，请补充信息。");
       }
@@ -151,7 +140,7 @@ export default function SubmitPage() {
     window.setTimeout(() => setStatus("success"), 220);
   }
 
-  function handleConfirm(event: FormEvent<HTMLFormElement>) {
+  async function handleConfirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!preview) {
       setStatus("error");
@@ -170,7 +159,6 @@ export default function SubmitPage() {
     }
 
     const submission = {
-      id: stableSubmissionId(preview.finalUrl),
       url: preview.finalUrl,
       wechat: wechat.trim(),
       group: group.trim(),
@@ -178,17 +166,28 @@ export default function SubmitPage() {
       intro: preview.generated.intro.trim(),
       type: preview.generated.type,
       tags: preview.generated.tags,
-      coverImage: manualImage || preview.generated.coverImage,
+      coverImage: manualImage ? "" : preview.generated.coverImage,
       raw: preview.raw,
-      updatedAt: new Date().toISOString(),
     };
 
-    const existing = JSON.parse(window.localStorage.getItem("voyage-submissions") || "[]") as Array<typeof submission>;
-    const next = [submission, ...existing.filter((item) => item.id !== submission.id)];
-    window.localStorage.setItem("voyage-submissions", JSON.stringify(next));
-    setStatus("success");
-    setSaved(true);
-    setNotice("确认成功：同一作品再次提交会按链接识别并更新为最新版本。当前项目未接数据库，已先保存到本机记录。");
+    setSaved(false);
+    setStatus("reading");
+    setNotice("正在保存到作品舱数据库。");
+    try {
+      const response = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(submission),
+      });
+      const result = (await response.json()) as { ok: boolean; error?: string; updated?: boolean };
+      if (!response.ok || !result.ok) throw new Error(result.error || "保存作品失败。");
+      setStatus("success");
+      setSaved(true);
+      setNotice(result.updated ? "更新成功：同一作品已按链接更新为最新版本。" : "提交成功：作品已保存到作品舱数据库。");
+    } catch (error) {
+      setStatus("error");
+      setNotice(error instanceof Error ? error.message : "保存作品失败，请稍后重试。");
+    }
   }
 
   return (

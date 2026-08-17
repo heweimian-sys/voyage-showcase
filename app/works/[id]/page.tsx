@@ -2,9 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RankingPanel, SiteHeader, WorkCover } from "../../components";
 import { works } from "../../data";
+import { getSubmittedWork } from "../../../db/submitted-works";
 
-export default function WorkDetailPage({ params }: { params: { id: string } }) {
-  const work = works.find((item) => item.id === Number(params.id));
+export const dynamic = "force-dynamic";
+
+export default async function WorkDetailPage({ params }: { params: { id: string } }) {
+  const staticWork = works.find((item) => item.id === Number(params.id));
+  const work = staticWork ?? await getSubmittedWork(params.id);
   if (!work) notFound();
 
   return (
